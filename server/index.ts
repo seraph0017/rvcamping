@@ -1,7 +1,7 @@
 import { Hono, type Context } from 'hono'
 import { serve } from '@hono/node-server'
 import { serveStatic } from '@hono/node-server/serve-static'
-import { html, raw } from 'hono/html'
+import { html } from 'hono/html'
 import QRCode from 'qrcode'
 
 import { config } from './config.ts'
@@ -18,10 +18,11 @@ import {
 import { api, clearSession, currentStaff, issueSession } from './api.ts'
 import { listConflicts, resolveConflict, submitOps, summary } from './ops.ts'
 import { readDoc, readSettingsFile } from './content.ts'
-import { contentShell, errorPage, layout } from './ui.ts'
+import { errorPage, layout } from './ui.ts'
 import { familyPage } from './pages/family.ts'
 import { homePage } from './pages/home.ts'
 import { mapPage } from './pages/map.ts'
+import { guidePage } from './pages/guide.ts'
 import { staffPage, loginPage, conflictsPage } from './pages/staff.ts'
 import { adminPage, paperSheetPage, printPage } from './pages/admin.ts'
 
@@ -90,6 +91,7 @@ app.get('/', (c) => {
       eventName: s.eventName ?? 'Retro Village 复古露营',
       subtitle: s.eventSubtitle ?? '一月一露 · 西郊林场',
       contactName: s.contactName ?? '小林',
+      address: s.location ?? '松江区西茹路 1 号',
     }),
   )
 })
@@ -101,6 +103,8 @@ app.get('/v/:token', (c) => {
   }
   const staff = currentStaff(c)
   const s = allSettings()
+  const all = listFamilies()
+  const idx = all.findIndex((x) => x.id === f.id)
   return c.html(
     familyPage({
       family: f,
@@ -108,6 +112,10 @@ app.get('/v/:token', (c) => {
       contactName: s.contactName ?? '小林',
       giftName: s.giftName ?? '村民礼品',
       refresh: c.req.query('r') !== undefined,
+      neighbors: {
+        prev: idx > 0 ? all[idx - 1]! : null,
+        next: idx >= 0 && idx < all.length - 1 ? all[idx + 1]! : null,
+      },
     }),
   )
 })
@@ -120,19 +128,20 @@ app.get('/v/:token/map', (c) => {
 
 app.get('/map', (c) => c.html(mapPage({ families: listFamilies(), self: null })))
 
-for (const [path, file, title] of [
-  ['/tips', 'tips.md', '营地 TIPS'],
-  ['/charter', 'charter.md', '村庄公约'],
-  ['/nearby', 'nearby.md', '周边推荐'],
+for (const [path, file, title, kind] of [
+  ['/tips', 'tips.md', '营地 TIPS', 'tips'],
+  ['/charter', 'charter.md', '村庄公约', 'charter'],
+  ['/nearby', 'nearby.md', '周边推荐', 'nearby'],
 ] as const) {
   app.get(path, (c) => {
-    const doc = readDoc(file, title)
+    const s = allSettings()
     return c.html(
-      contentShell(
-        doc.title,
-        doc.subtitle,
-        html`${raw(doc.body)}${doc.updated ? html`<p class="prose-updated">更新于 ${doc.updated}</p>` : ''}`,
-      ),
+      guidePage({
+        doc: readDoc(file, title),
+        kind,
+        contactName: s.contactName ?? '小林',
+        back: '/',
+      }),
     )
   })
 }
