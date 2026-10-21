@@ -1,0 +1,26 @@
+{
+  "name": "Retro Village 村民服务站",
+  "short_name": "村民服务站",
+  "description": "一月一露西郊林场 · 复古露营活动服务站",
+  "start_url": "/staff",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#F5EEE2",
+  "theme_color": "#F5EEE2",
+  "lang": "zh-CN",
+  "icons": [
+    {
+      "src": "/assets/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/assets/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}

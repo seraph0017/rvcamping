@@ -1,0 +1,29 @@
+{
+  "name": "rvcamping-village-station",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Retro Village 村民服务站 — 一月一露西郊林场复古露营活动 H5",
+  "engines": {
+    "node": ">=22.5"
+  },
+  "scripts": {
+    "dev": "node --experimental-strip-types --watch-path=server --watch-path=client server/index.ts",
+    "build": "node --experimental-strip-types scripts/build.ts",
+    "start": "node --experimental-strip-types server/index.ts",
+    "import": "node --experimental-strip-types scripts/import-csv.ts",
+    "check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@hono/node-server": "^1.13.7",
+    "hono": "^4.6.14",
+    "marked": "^15.0.4",
+    "qrcode": "^1.5.4"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "@types/qrcode": "^1.5.5",
+    "esbuild": "^0.24.0",
+    "typescript": "^5.7.2"
+  }
+}
