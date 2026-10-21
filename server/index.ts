@@ -47,6 +47,7 @@ app.use('*', async (c, next) => {
   const noStore =
     p.startsWith('/v/') ||
     p.startsWith('/staff') ||
+    p.startsWith('/ops') ||
     p.startsWith('/admin') ||
     p.startsWith('/api/') ||
     p === '/'
@@ -138,32 +139,37 @@ for (const [path, file, title] of [
 
 // ---------------- 工作人员 ----------------
 
-app.get('/staff/login', (c) => {
-  if (currentStaff(c)) return c.redirect('/staff')
+app.get('/ops/login', (c) => {
+  if (currentStaff(c)) return c.redirect('/ops')
   return c.html(loginPage({ error: c.req.query('e') ?? undefined }))
 })
 
-app.post('/staff/login', async (c) => {
+app.post('/ops/login', async (c) => {
   const ip = c.req.header('x-forwarded-for')?.split(',')[0]?.trim() ?? 'local'
   const { findStaffByPin, loginBlocked, recordLoginAttempt } = await import('./db.ts')
-  if (loginBlocked(ip)) return c.redirect('/staff/login?e=' + encodeURIComponent('试太多次了，等 5 分钟'))
+  if (loginBlocked(ip)) return c.redirect('/ops/login?e=' + encodeURIComponent('试太多次了，等 5 分钟'))
   const body = await c.req.parseBody()
   const pin = String(body.pin ?? '')
   const staff = findStaffByPin(pin)
   recordLoginAttempt(ip, !!staff)
-  if (!staff) return c.redirect('/staff/login?e=' + encodeURIComponent('PIN 不对'))
+  if (!staff) return c.redirect('/ops/login?e=' + encodeURIComponent('PIN 不对'))
   issueSession(c, staff)
-  return c.redirect('/staff')
+  return c.redirect('/ops')
 })
 
-app.get('/staff/logout', (c) => {
+// 旧入口兼容：公开页面不展示此地址，已有书签继续可用。
+app.get('/staff/login', (c) => c.redirect('/ops/login', 301))
+app.get('/staff', (c) => c.redirect('/ops', 301))
+app.get('/staff/logout', (c) => c.redirect('/ops/logout', 301))
+
+app.get('/ops/logout', (c) => {
   clearSession(c)
-  return c.redirect('/staff/login')
+  return c.redirect('/ops/login')
 })
 
-app.get('/staff', (c) => {
+app.get('/ops', (c) => {
   const staff = currentStaff(c)
-  if (!staff) return c.redirect('/staff/login')
+  if (!staff) return c.redirect('/ops/login')
   const tab = c.req.query('tab') === 'all' ? 'all' : 'pending'
   return c.html(
     staffPage({
@@ -176,11 +182,11 @@ app.get('/staff', (c) => {
   )
 })
 
-app.get('/staff/lookup', (c) => {
+app.get('/ops/lookup', (c) => {
   const staff = currentStaff(c)
-  if (!staff) return c.redirect('/staff/login')
+  if (!staff) return c.redirect('/ops/login')
   const q = (c.req.query('q') ?? '').trim()
-  if (!q) return c.redirect('/staff')
+  if (!q) return c.redirect('/ops')
 
   const padded = /^\d{1,3}$/.test(q) ? q.padStart(3, '0') : q
   let f = getFamilyByCode(padded)
@@ -199,7 +205,7 @@ app.get('/staff/lookup', (c) => {
         html`${staffTop(staff)}<main class="center-box"><div class="empty">
   <h1>没找到「${q}」</h1>
   <p>编号要三位，比如 <code>005</code>。</p>
-  <a class="btn btn--ghost" href="/staff">回到清单</a>
+  <a class="btn btn--ghost" href="/ops">回到清单</a>
 </div></main>`,
       ),
       404,
@@ -208,25 +214,25 @@ app.get('/staff/lookup', (c) => {
   return c.redirect(`/v/${f.token}`)
 })
 
-app.get('/staff/conflicts', (c) => {
+app.get('/ops/conflicts', (c) => {
   const staff = currentStaff(c)
-  if (!staff) return c.redirect('/staff/login')
+  if (!staff) return c.redirect('/ops/login')
   return c.html(conflictsPage({ staff, conflicts: listConflicts() as never }))
 })
 
-app.post('/staff/conflicts/:opId/resolve', async (c) => {
+app.post('/ops/conflicts/:opId/resolve', async (c) => {
   const staff = currentStaff(c)
-  if (!staff) return c.redirect('/staff/login')
+  if (!staff) return c.redirect('/ops/login')
   const body = await c.req.parseBody()
   const resolution = body.resolution === 'void' ? 'void' : 'keep'
   resolveConflict(c.req.param('opId'), resolution, staff)
-  return c.redirect('/staff/conflicts')
+  return c.redirect('/ops/conflicts')
 })
 
 const staffTop = (staff: Staff) => html`<header class="staffbar">
-  <a class="staffbar__back" href="/staff">← 清单</a>
+  <a class="staffbar__back" href="/ops">← 清单</a>
   <span class="staffbar__mode">${staff.name}</span>
-  <a class="staffbar__exit" href="/staff/logout">退出</a>
+  <a class="staffbar__exit" href="/ops/logout">退出</a>
 </header>`
 
 // ---------------- 管理 ----------------
@@ -238,7 +244,7 @@ function requireAdmin(c: Context): Staff | null {
 
 app.get('/admin', (c) => {
   const staff = requireAdmin(c)
-  if (!staff) return c.redirect('/staff/login')
+  if (!staff) return c.redirect('/ops/login')
   return c.html(
     adminPage({
       staff,
@@ -252,7 +258,7 @@ app.get('/admin', (c) => {
 
 app.post('/admin/import', async (c) => {
   const staff = requireAdmin(c)
-  if (!staff) return c.redirect('/staff/login')
+  if (!staff) return c.redirect('/ops/login')
   const body = await c.req.parseBody()
   const file = body.csv
   if (file && typeof file !== 'string') {
@@ -267,7 +273,7 @@ app.post('/admin/import', async (c) => {
 
 app.post('/admin/settings', async (c) => {
   const staff = requireAdmin(c)
-  if (!staff) return c.redirect('/staff/login')
+  if (!staff) return c.redirect('/ops/login')
   const body = await c.req.parseBody()
   for (const k of ['eventName', 'eventSubtitle', 'giftName', 'contactName']) {
     if (typeof body[k] === 'string') setSetting(k, String(body[k]))
@@ -277,7 +283,7 @@ app.post('/admin/settings', async (c) => {
 
 app.post('/admin/backfill', async (c) => {
   const staff = requireAdmin(c)
-  if (!staff) return c.redirect('/staff/login')
+  if (!staff) return c.redirect('/ops/login')
   const body = await c.req.parseBody()
   const code = String(body.code ?? '').trim().padStart(3, '0')
   const type = String(body.type ?? 'both')
@@ -300,7 +306,7 @@ app.post('/admin/backfill', async (c) => {
 
 app.get('/admin/print', async (c) => {
   const staff = requireAdmin(c)
-  if (!staff) return c.redirect('/staff/login')
+  if (!staff) return c.redirect('/ops/login')
   const families = await Promise.all(
     listFamilies().map(async (f) => ({
       ...f,
@@ -325,7 +331,7 @@ app.get('/admin/print', async (c) => {
 
 app.get('/admin/paper', (c) => {
   const staff = requireAdmin(c)
-  if (!staff) return c.redirect('/staff/login')
+  if (!staff) return c.redirect('/ops/login')
   return c.html(paperSheetPage({ families: listFamilies() }))
 })
 

@@ -154,9 +154,9 @@ function staffCard(o: StaffCardOpts) {
   const f = o.family
   return html`
 <header class="staffbar">
-  <a class="staffbar__back" href="/staff">← 清单</a>
+  <a class="staffbar__back" href="/ops">← 清单</a>
   <span class="staffbar__mode">工作人员模式 · ${o.staff.name}</span>
-  <a class="staffbar__exit" href="/staff/logout">退出</a>
+  <a class="staffbar__exit" href="/ops/logout">退出</a>
 </header>
 
 <main class="staff-page">

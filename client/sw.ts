@@ -3,7 +3,7 @@
  * Service Worker —— 只服务工作人员端
  * 关键点（DESIGN §12.4）：
  *  - 注册在**根 scope**，否则 scope 外的 /assets/* 拦不到
- *  - fetch 里按路径分流：只处理 /staff* 和 /assets/*，其余一律 return（村民页完全不经 SW）
+ *  - fetch 里按路径分流：只处理 /ops* 和 /assets/*，其余一律 return（村民页完全不经 SW）
  */
 
 // SAFETY: lib.webworker 把 self 声明为 WorkerGlobalScope & typeof globalThis，
@@ -12,7 +12,7 @@ const sw = self as unknown as ServiceWorkerGlobalScope
 
 const VERSION = 'rv-v1'
 const SHELL = `${VERSION}-shell`
-const SHELL_URLS = ['/staff', '/assets/app.css', '/assets/staff.js', '/assets/cover.png']
+const SHELL_URLS = ['/ops', '/assets/app.css', '/assets/staff.js', '/assets/cover.png']
 
 sw.addEventListener('install', (event) => {
   event.waitUntil(
@@ -39,7 +39,7 @@ sw.addEventListener('message', (event) => {
   if (data?.type === 'PRECACHE' && typeof data.url === 'string') {
     // 只允许同源绝对路径，避免被用来请求任意地址
     const target = data.url
-    const safe = target.startsWith('/staff') || target.startsWith('/assets/')
+    const safe = target.startsWith('/ops') || target.startsWith('/assets/')
     if (!safe) return
     event.waitUntil(
       (async () => {
@@ -67,7 +67,7 @@ sw.addEventListener('fetch', (event) => {
   }
   if (url.origin !== sw.location.origin) return
 
-  const isStaff = url.pathname === '/staff' || url.pathname.startsWith('/staff/')
+  const isStaff = url.pathname === '/ops' || url.pathname.startsWith('/ops/')
   const isAsset = url.pathname.startsWith('/assets/')
 
   // 村民页、接口、其他一切：不拦截，让浏览器正常走网络
@@ -97,7 +97,7 @@ sw.addEventListener('fetch', (event) => {
     return
   }
 
-  // /staff 页面：网络优先，失败回落缓存（离线可用）
+  // /ops 页面：网络优先，失败回落缓存（离线可用）
   event.respondWith(
     (async () => {
       const cache = await caches.open(SHELL)
@@ -105,11 +105,11 @@ sw.addEventListener('fetch', (event) => {
         const res = await fetch(req, { credentials: 'include' })
         if (res.ok) {
           const copy = res.clone()
-          event.waitUntil(cache.put('/staff', copy))
+          event.waitUntil(cache.put('/ops', copy))
         }
         return res
       } catch {
-        const hit = await cache.match('/staff')
+        const hit = await cache.match('/ops')
         if (hit) return hit
         return new Response('离线，且没有预载离线包。请连 Wi-Fi 后刷新。', {
           status: 503,

@@ -11,8 +11,8 @@ export function loginPage(opts: { error?: string }) {
       bodyClass: 'is-staff',
     },
     html`<header class="staffbar staffbar--plain">
-  <a class="staffbar__back" href="/">← 首页</a>
-  <span class="staffbar__mode">工作人员</span>
+  <a class="staffbar__back" href="/">← 返回</a>
+  <span class="staffbar__mode">现场操作台</span>
   <span></span>
 </header>
 <main class="staff-login">
@@ -20,7 +20,7 @@ export function loginPage(opts: { error?: string }) {
   <h1>工作人员登录</h1>
   <p class="staff-login__hint">输入你的 PIN。本机记住 30 天，不用每次输。</p>
   ${opts.error ? html`<p class="form-error">${opts.error}</p>` : ''}
-  <form method="post" action="/staff/login" class="staff-login__form" autocomplete="off">
+  <form method="post" action="/ops/login" class="staff-login__form" autocomplete="off">
     <input
       class="pin-input"
       name="pin"
@@ -59,9 +59,9 @@ export function staffPage(opts: {
       bodyAttrs: 'data-mode="list"',
     },
     html`<header class="staffbar">
-  <a class="staffbar__back" href="/">← 首页</a>
+  <a class="staffbar__back" href="/">← 返回</a>
   <span class="staffbar__mode">${opts.staff.name}${opts.staff.role === 'admin' ? ' · 管理员' : ''}</span>
-  <a class="staffbar__exit" href="/staff/logout">退出</a>
+  <a class="staffbar__exit" href="/ops/logout">退出</a>
 </header>
 
 <main class="staff-list">
@@ -81,7 +81,7 @@ export function staffPage(opts: {
   </section>
 
   ${opts.summary.conflicts > 0
-    ? html`<a class="alertbar" href="/staff/conflicts">⚠ ${opts.summary.conflicts} 条冲突待核对 →</a>`
+    ? html`<a class="alertbar" href="/ops/conflicts">⚠ ${opts.summary.conflicts} 条冲突待核对 →</a>`
     : ''}
 
   <div class="syncbar" id="syncbar" hidden>
@@ -89,7 +89,7 @@ export function staffPage(opts: {
     <button class="linkish" id="sync-now">立即同步</button>
   </div>
 
-  <form class="lookup" method="get" action="/staff/lookup" autocomplete="off">
+  <form class="lookup" method="get" action="/ops/lookup" autocomplete="off">
     <input
       class="lookup__input"
       id="lookup"
@@ -104,8 +104,8 @@ export function staffPage(opts: {
   </form>
 
   <div class="tabs">
-    <a class="tab ${opts.tab === 'pending' ? 'is-on' : ''}" href="/staff?tab=pending">待办 ${pending.length}</a>
-    <a class="tab ${opts.tab === 'all' ? 'is-on' : ''}" href="/staff?tab=all">全部 ${opts.families.length}</a>
+    <a class="tab ${opts.tab === 'pending' ? 'is-on' : ''}" href="/ops?tab=pending">待办 ${pending.length}</a>
+    <a class="tab ${opts.tab === 'all' ? 'is-on' : ''}" href="/ops?tab=all">全部 ${opts.families.length}</a>
     <button class="tab tab--ghost" id="preload">预载离线包</button>
   </div>
 
@@ -177,7 +177,7 @@ export function conflictsPage(opts: {
   return layout(
     { title: '冲突核对 · 村民服务站', noindex: true, bodyClass: 'is-staff' },
     html`<header class="staffbar">
-  <a class="staffbar__back" href="/staff">← 清单</a>
+  <a class="staffbar__back" href="/ops">← 清单</a>
   <span class="staffbar__mode">冲突核对</span>
   <span></span>
 </header>
@@ -198,11 +198,11 @@ export function conflictsPage(opts: {
     ${c.late_sync ? html`<em>（设备时钟偏差大）</em>` : ''}
   </p>
   <div class="conflict__actions">
-    <form method="post" action="/staff/conflicts/${c.op_id}/resolve">
+    <form method="post" action="/ops/conflicts/${c.op_id}/resolve">
       <input type="hidden" name="resolution" value="keep" />
       <button class="btn btn--ghost" type="submit">保留现有记录</button>
     </form>
-    <form method="post" action="/staff/conflicts/${c.op_id}/resolve">
+    <form method="post" action="/ops/conflicts/${c.op_id}/resolve">
       <input type="hidden" name="resolution" value="void" />
       <button class="btn btn--ghost btn--danger" type="submit">改判为这条</button>
     </form>

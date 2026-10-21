@@ -71,9 +71,9 @@ export function adminPage(opts: {
   return layout(
     { title: '后台 · 村民服务站', noindex: true, bodyClass: 'is-staff' },
     html`<header class="staffbar">
-  <a class="staffbar__back" href="/staff">← 清单</a>
+  <a class="staffbar__back" href="/ops">← 清单</a>
   <span class="staffbar__mode">管理员 · ${opts.staff.name}</span>
-  <a class="staffbar__exit" href="/staff/logout">退出</a>
+  <a class="staffbar__exit" href="/ops/logout">退出</a>
 </header>
 
 <main class="staff-list">

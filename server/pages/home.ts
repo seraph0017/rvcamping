@@ -29,10 +29,7 @@ ${villagerHeader()}
     <a href="/nearby"><span>周边吃饭与住宿</span><em>营地外的好去处</em></a>
   </nav>
 
-  <div class="home__staff">
-    <a class="btn btn--ghost" href="/staff">我是工作人员</a>
-    <p class="home__dim">现场联系人：${opts.contactName}</p>
-  </div>
+  <p class="home__dim home__contact">现场联系人：${opts.contactName}</p>
 </main>
 ${footer()}`,
   )
