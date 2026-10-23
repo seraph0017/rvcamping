@@ -164,3 +164,10 @@ input, textarea, .guest-form input, .guest-form textarea { font-size: 16px; }
 @media (prefers-reduced-motion: reduce) {
   *, ::view-transition-old(root), ::view-transition-new(root) { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
 }
+
+/* 现场纸质办理提示：只说明流程，不引入任何电子核销入口 */
+.paper-note{display:flex;gap:12px;align-items:center;margin:0 0 6px;padding:13px 14px;border:1px solid #e4d6b8;border-radius:15px;background:linear-gradient(135deg,#fffaf0,#f8efd9);box-shadow:0 4px 16px #213b5008}
+.paper-note__mark{flex:none;display:grid;place-items:center;width:42px;height:42px;border-radius:50%;background:var(--coral);color:#fff;font-size:11px;font-weight:700;letter-spacing:.12em;box-shadow:0 0 0 4px #c85c4214}
+.paper-note strong{display:block;font-size:13px;letter-spacing:.02em}
+.paper-note p{margin:3px 0 0;color:#7b6a4d;font-size:11px;line-height:1.55}
+@media (max-width:380px){.paper-note{padding:11px;gap:10px}.paper-note__mark{width:36px;height:36px;font-size:10px}.paper-note p{font-size:10px}}

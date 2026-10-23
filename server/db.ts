@@ -72,6 +72,18 @@ CREATE TABLE IF NOT EXISTS guest_messages (
 );
 CREATE INDEX IF NOT EXISTS idx_guest_family_time ON guest_messages(family_id, created_ms);
 
+CREATE TABLE IF NOT EXISTS public_messages (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  visitor_key TEXT NOT NULL,
+  ip_key TEXT NOT NULL,
+  name TEXT NOT NULL CHECK (length(name) BETWEEN 1 AND 24),
+  message TEXT NOT NULL CHECK (length(message) BETWEEN 1 AND 300),
+  created_ms INTEGER NOT NULL,
+  hidden INTEGER NOT NULL DEFAULT 0 CHECK (hidden IN (0,1))
+);
+CREATE INDEX IF NOT EXISTS idx_public_visitor_time ON public_messages(visitor_key, created_ms);
+CREATE INDEX IF NOT EXISTS idx_public_ip_time ON public_messages(ip_key, created_ms);
+
 CREATE VIEW IF NOT EXISTS v_family_state AS
 SELECT f.id AS family_id,
        MAX(CASE WHEN o.type='checkin' THEN o.server_ms END)  AS checkin_ms,

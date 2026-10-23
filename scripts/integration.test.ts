@@ -4,8 +4,9 @@ import { spawn } from 'node:child_process'
 import { mkdtempSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+import { DatabaseSync } from 'node:sqlite'
 
-test('client package: real sessions, shared status, QR, guestbook and permissions', async () => {
+test('notice station: paper workflow, retired writes, public guestbook and preserved records', async () => {
   const dir = mkdtempSync(join(tmpdir(), 'rv-integration-'))
   const port = 21000 + Math.floor(Math.random() * 20000)
   const base = `http://127.0.0.1:${port}`
@@ -23,43 +24,58 @@ test('client package: real sessions, shared status, QR, guestbook and permission
       await new Promise(r => setTimeout(r, 100))
     }
     assert.ok(ready, 'isolated server starts')
-    const login = await call('/ops/login', { method: 'POST', body: new URLSearchParams({ pin: '987654' }) })
+    const fixture = new DatabaseSync(join(dir, 'test.db'))
+    const family = fixture.prepare('SELECT id,token FROM families ORDER BY id LIMIT 1').get() as { id: number; token: string }
+    fixture.prepare("INSERT INTO guest_messages(family_id,name,message,created_ms) VALUES(?,?,?,?)").run(family.id, '原村民', '保留的旧留言', Date.now()-60_000)
+    const oldToken = family.token
+    const originalOps = fixture.prepare('SELECT COUNT(*) AS n FROM ops').get()!.n
+    const home = await (await call('/?staff=1')).text()
+    for (const label of ['村庄公告', '村民公约', '营地地图', '村庄地图', '营地 TIPS', '活动时间表', '留言板']) assert.ok(home.includes(label), label)
+    for (const label of ['qrbox', 'checkinStatus', 'giftStatus', 'view-staff', 'data-token=', '专属二维码']) assert.ok(!home.includes(label), label)
+    const oldPage = await call('/v/' + oldToken)
+    assert.equal(oldPage.headers.get('location'), '/')
+    assert.equal((await call('/ops')).headers.get('location'), '/')
+    assert.equal((await call('/ops/login')).headers.get('location'), '/admin/login')
+    assert.equal((await call('/api/ops', json([]))).status, 410)
+    assert.equal((await call('/api/v/' + oldToken)).status, 410)
+    const login = await call('/admin/login', { method: 'POST', body: new URLSearchParams({ pin: '987654' }) })
+    assert.equal(login.headers.get('location'), '/admin')
     const setCookie = login.headers.get('set-cookie') ?? ''
     assert.ok(setCookie.includes('rv_session='))
-    assert.ok(!/; Secure/i.test(setCookie), 'HTTP production keeps its session cookie')
+    assert.ok(!/; Secure/i.test(setCookie), 'HTTP admin session works')
     const cookie = setCookie.split(';')[0]
-    const snap = await (await call('/api/staff/snapshot', { headers: { cookie } })).json()
-    const token = snap.families[0].token
-    const token2 = snap.families[1].token
-    assert.equal((await call('/api/ops', json([]))).status, 401)
-    const op = { op_id: 'integration-checkin', token, type: 'checkin', client_ms: Date.now() }
-    assert.equal((await (await call('/api/ops', json([op], cookie))).json()).results[0].status, 'accepted')
-    assert.equal((await (await call('/api/ops', json([op], cookie))).json()).results[0].status, 'duplicate')
-    const family = (await (await call('/api/v/' + token)).json()).family
-    assert.ok(family.checkin_at, 'second client sees persisted checkin')
-    assert.equal(family.phone, undefined)
-    const card = await (await call('/v/' + token)).text()
-    assert.ok(card.includes('view-card') && card.includes('/assets/village.js'))
-    assert.ok(!card.includes('cdnjs') && !card.includes('localStorage'))
-    assert.match(await (await call('/api/v/' + token + '/qr.svg')).text(), /<svg/)
-    const home = await (await call('/?staff=1')).text()
-    assert.ok(!home.includes('view-staff') && !home.includes('href="/ops'))
-    assert.equal((await call('/api/guestbook', json({ message: 'anonymous' }))).status, 401)
-    assert.equal((await call('/api/guestbook', json({ token, message: '  ' }))).status, 400)
-    const message = '<img src=x onerror=alert(1)> hello village'
-    const added = await call('/api/guestbook', json({ token, name: '一家人', message }))
-    assert.equal(added.status, 201)
+    assert.equal((await call('/api/ops', json([{ token: oldToken, type: 'checkin' }], cookie))).status, 410)
+    assert.equal((await call('/admin/backfill', json({}, cookie))).status, 410)
+    assert.equal((await call('/api/groups/example/undo', json({}, cookie))).status, 410)
+    assert.equal((await call('/api/staff/conflicts/example/resolve', json({}, cookie))).status, 410)
+    const staffLogin = await call('/admin/login', { method: 'POST', body: new URLSearchParams({ pin: '1234' }) })
+    assert.ok(!staffLogin.headers.has('set-cookie'), 'retired staff cannot access admin')
+    const boardBefore = await (await call('/api/guestbook')).json()
+    assert.equal(boardBefore.messages[0].message, '保留的旧留言')
+    assert.equal((await call('/api/guestbook', json({ message: '  ' }))).status, 400)
+    const message = '<img src=x onerror=alert(1)> 公告站留言'
+    const added = await call('/api/guestbook', json({ name: '露营伙伴', message }))
+    assert.equal(added.status, 201, 'no family card or login required')
+    const visitorCookie = added.headers.get('set-cookie')!.split(';')[0]
     const entry = await added.json()
     const entries = await (await call('/api/guestbook')).json()
-    assert.equal(entries.messages[0].message, message)
-    assert.equal(entries.messages[0].token, undefined)
-    assert.equal((await call('/api/guestbook', json({ token, message: 'too fast' }))).status, 429)
-    assert.equal((await call('/api/guestbook', json({ token: token2, message: 'x'.repeat(301) }))).status, 400)
+    assert.ok(entries.messages.some((m: { message: string }) => m.message === message))
+    assert.equal(entries.messages[0].visitor_key, undefined)
+    assert.equal((await call('/api/guestbook', json({ message: 'too fast' }, visitorCookie))).status, 429)
+    assert.equal((await call('/api/guestbook', json({ message: 'x'.repeat(301) }))).status, 400)
     assert.equal((await call('/api/admin/guestbook/' + entry.id + '/hide', json({}))).status, 403)
     assert.ok((await call('/api/admin/guestbook/' + entry.id + '/hide', json({}, cookie))).ok)
-    assert.equal((await (await call('/api/guestbook')).json()).messages.length, 0)
-    assert.ok((await call('/api/ops/integration-checkin/undo', json({}, cookie))).ok)
-    assert.equal((await (await call('/api/v/' + token)).json()).family.checkin_at, null)
+    const admin = await (await call('/admin', { headers: { cookie } })).text()
+    assert.ok(admin.includes('留言管理') && admin.includes('纸质签领表'))
+    assert.ok(!admin.includes('补录') && !admin.includes('已签到'))
+    const paper = await (await call('/forms/signatures')).text()
+    assert.ok(paper.includes('签到签名') && paper.includes('礼品领取签名'))
+    assert.equal((paper.match(/class="signature-sheet"/g) ?? []).length, 3)
+    assert.equal(fixture.prepare('SELECT COUNT(*) AS n FROM ops').get()!.n, originalOps)
+    assert.equal(fixture.prepare('SELECT token FROM families WHERE id=?').get(family.id)!.token, oldToken)
+    assert.equal(fixture.prepare('SELECT COUNT(*) AS n FROM guest_messages').get()!.n, 1)
+    assert.equal(fixture.prepare('PRAGMA integrity_check').get()!.integrity_check, 'ok')
+    fixture.close()
   } finally {
     if (child.exitCode === null) {
       child.kill('SIGTERM')

@@ -1,7 +1,6 @@
 // Customer-provided view, gallery and touch-map behavior; shared data lives on the server.
-const token = document.body.dataset.token;
 const sections = new Set(['card', 'rules', 'tips', 'map', 'campmap', 'schedule', 'guestbook', 'lottery']);
-let activeView = 'card', toastTimer, statusInFlight = false, mounted = false;
+let activeView = 'card', toastTimer, mounted = false;
 const scrollPositions = new Map();
 const $ = (selector) => document.querySelector(selector);
 
@@ -11,28 +10,6 @@ function toast(message) {
   el.textContent = message;
   el.classList.remove('hide');
   toastTimer = setTimeout(() => el.classList.add('hide'), 3500);
-}
-
-function setStatus(kind, done) {
-  $('#' + kind + 'Status')?.classList.toggle('done', done);
-  const text = $('#' + kind + 'Text'), state = $('#' + kind + 'State');
-  if (text) text.textContent = done ? (kind === 'checkin' ? '已完成签到' : '已完成领取') : (kind === 'checkin' ? '等待工作人员确认' : '每户一份');
-  if (state) state.textContent = done ? (kind === 'checkin' ? '已签到' : '已领取') : (kind === 'checkin' ? '待签到' : '待领取');
-}
-
-async function refreshStatus() {
-  if (!token || document.hidden || statusInFlight) return;
-  statusInFlight = true;
-  try {
-    const res = await fetch('/api/v/' + token, { cache: 'no-store' });
-    if (!res.ok) throw new Error('status');
-    const { family } = await res.json();
-    setStatus('checkin', family.checkin_at !== null);
-    setStatus('gift', family.gift_at !== null);
-    $('#cardSync').textContent = '状态已同步 · ' + new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
-  } catch {
-    $('#cardSync').textContent = '暂未连接服务站，显示上次状态；联网后自动更新';
-  } finally { statusInFlight = false; }
 }
 
 async function renderGuests() {
@@ -74,7 +51,6 @@ function show(view, push = true) {
   mounted = true;
   if (push) history.pushState({ view }, '', '#' + view);
   if (view === 'guestbook') void renderGuests();
-  if (view === 'card') void refreshStatus();
 }
 
  const tipsData=[
@@ -136,7 +112,7 @@ $('#guestForm').addEventListener('submit', async event => {
   button.disabled = true;
   try {
     const res = await fetch('/api/guestbook', { method: 'POST', headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ token, name: $('#guestName').value, message: message.value }) });
+      body: JSON.stringify({ name: $('#guestName').value, message: message.value }) });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || '发布失败，请重试');
     message.value = '';
@@ -145,10 +121,9 @@ $('#guestForm').addEventListener('submit', async event => {
   finally { button.disabled = false; }
 });
 
-if (!token) $('#guestForm').hidden = true;
 window.addEventListener('popstate', () => show(location.hash.slice(1) || document.body.dataset.initialView, false));
-window.addEventListener('online', () => { void refreshStatus(); if (activeView === 'guestbook') void renderGuests(); });
-document.addEventListener('visibilitychange', () => { if (!document.hidden) { void refreshStatus(); if (activeView === 'guestbook') void renderGuests(); } });
-setInterval(() => { void refreshStatus(); if (!document.hidden && activeView === 'guestbook') void renderGuests(); }, 5000);
+window.addEventListener('online', () => { if (activeView === 'guestbook') void renderGuests(); });
+document.addEventListener('visibilitychange', () => { if (!document.hidden && activeView === 'guestbook') void renderGuests(); });
+setInterval(() => { if (!document.hidden && activeView === 'guestbook') void renderGuests(); }, 20000);
 renderTips();
 show(location.hash.slice(1) || document.body.dataset.initialView || 'card', false);

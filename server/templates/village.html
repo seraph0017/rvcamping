@@ -4,12 +4,12 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
   <meta name="theme-color" content="#f7f3e8" />
-  <meta name="description" content="Retro Village 2026 村民服务站 · 村民卡、入村签到、村礼领取与村庄信息" />
+  <meta name="description" content="Retro Village 2026 村民服务站 · 村庄公告、地图、营地 TIPS 与留言" />
   <title>[[TITLE]]</title>
   <meta name="referrer" content="no-referrer" />
   <link rel="stylesheet" href="/assets/village.css" />
 </head>
-<body data-initial-view="[[VIEW]]" data-token="[[TOKEN]]">
+<body data-initial-view="[[VIEW]]">
 <main class="wrap" id="residentApp">
   <header id="siteHeader">
     <div class="brandhead"><div class="brandlockup"><img class="stamp" src="/assets/village/rv-stamp.webp" alt="Retro Village 2026 年度徽章" /><div class="brandtitle">村民<span class="retro-accent">服务站</span></div></div>
@@ -17,7 +17,7 @@
     </div>
   </header>
   <section id="view-card">
-    [[PASS]]
+    <div class="paper-note"><span class="paper-note__mark">现场</span><div><strong>签到与礼品领取 · 纸质签字</strong><p>到场后在登记点签字领取，无需手机扫码或确认。</p></div></div>
     <div class="section-head"><h2>村庄公告</h2><span>VILLAGE NOTICE</span></div>
     <div class="grid"><button class="tile" data-view="rules"><span class="icon icon-rules" aria-hidden="true"><svg viewBox="0 0 48 48"><path d="M12 7.5h17l7 7v25H12z"/><path d="M29 7.5v8h7M18 22h12M18 28h9"/><path d="m18 34 2.5 2.5L26 31"/></svg></span><strong>村民公约</strong><small>一起把空地变成村庄</small></button><button class="tile" data-view="campmap"><span class="icon icon-map" aria-hidden="true"><svg viewBox="0 0 48 48"><path d="m7 12 11-4 12 4 11-4v28l-11 4-12-4-11 4zM18 8v28M30 12v28"/><path d="M23 27c0-4 3-7 7-7s7 3 7 7c0 4-7 10-7 10s-7-6-7-10Z"/><circle cx="30" cy="27" r="1.5"/></svg></span><strong>营地地图</strong><small>查看完整营地导览</small></button><button class="tile" data-view="map"><span class="icon icon-village" aria-hidden="true"><svg viewBox="0 0 48 48"><path d="m6 22 18-15 18 15M11 19v22h26V19M20 41V28h8v13"/><path d="M15 23h5v5h-5zM28 23h5v5h-5z"/></svg></span><strong>村庄地图</strong><small>查看分区和营位</small></button><button class="tile" data-view="tips"><span class="icon icon-tips" aria-hidden="true"><svg viewBox="0 0 48 48"><path d="M17 21a7 7 0 1 1 14 0c0 3-1.4 4.8-3.1 6.8-.8 1-1.2 2-1.3 3.2h-5.2c-.1-1.2-.5-2.2-1.3-3.2C18.4 25.8 17 24 17 21Z"/><path d="M21.5 34h5M22.5 38h3M24 6v3M11 12l3 3M37 12l-3 3M7 23h4M37 23h4"/></svg></span><strong>营地 TIPS</strong><small>老村民写给新村民</small></button><button class="tile" data-view="schedule"><span class="icon icon-schedule" aria-hidden="true"><svg viewBox="0 0 48 48"><rect x="8" y="11" width="32" height="29" rx="3"/><path d="M15 7v8M33 7v8M8 19h32"/><circle cx="28" cy="30" r="7"/><path d="M28 26v4l3 2"/></svg></span><strong>活动时间表</strong><small>活动安排稍后更新</small></button><button class="tile" data-view="guestbook"><span class="icon icon-guest" aria-hidden="true"><svg viewBox="0 0 48 48"><path d="M8 11h32v23H23l-9 7v-7H8z"/><path d="M15 19h18M15 25h12"/><path d="m31 35 7-7 3 3-7 7-4 1z"/></svg></span><strong>留言板</strong><small>留下意见和建议</small></button></div>
   </section>
