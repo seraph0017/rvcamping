@@ -7,6 +7,7 @@ import QRCode from 'qrcode'
 import { config } from './config.ts'
 import {
   allSettings,
+  db,
   getFamilyByCode,
   getFamilyByToken,
   importCsv,
@@ -20,11 +21,9 @@ import { listConflicts, resolveConflict, submitOps, summary } from './ops.ts'
 import { readDoc, readSettingsFile } from './content.ts'
 import { errorPage, layout } from './ui.ts'
 import { familyPage } from './pages/family.ts'
-import { homePage } from './pages/home.ts'
-import { mapPage } from './pages/map.ts'
-import { guidePage } from './pages/guide.ts'
 import { staffPage, loginPage, conflictsPage } from './pages/staff.ts'
 import { adminPage, paperSheetPage, printPage } from './pages/admin.ts'
+import { villagePage } from './pages/village.ts'
 
 seedIfEmpty()
 
@@ -60,9 +59,7 @@ app.use('*', async (c, next) => {
   const start = Date.now()
   await next()
   const p = c.req.path
-  const safe = p.startsWith('/v/')
-    ? p.replace(/^\/v\/([A-Z2-7]{8})[A-Z2-7]*/, '/v/$1…')
-    : p
+  const safe = p.replace(/(\/(?:api\/)?v\/)([A-Z2-7]{8})[A-Z2-7]*/g, '$1$2…')
   const ms = Date.now() - start
   if (config.isProd) console.log(`${c.req.method} ${safe} ${c.res.status} ${ms}ms`)
   else if (!p.startsWith('/assets/')) console.log(`${c.req.method} ${safe} ${c.res.status} ${ms}ms`)
@@ -85,15 +82,7 @@ app.use('/sw.js', serveStatic({ path: './public/sw.js' }))
 // ---------------- 页面 ----------------
 
 app.get('/', (c) => {
-  const s = allSettings()
-  return c.html(
-    homePage({
-      eventName: s.eventName ?? 'Retro Village 复古露营',
-      subtitle: s.eventSubtitle ?? '一月一露 · 西郊林场',
-      contactName: s.contactName ?? '小林',
-      address: s.location ?? '松江区西茹路 1 号',
-    }),
-  )
+  return c.html(villagePage())
 })
 
 app.get('/v/:token', (c) => {
@@ -102,6 +91,7 @@ app.get('/v/:token', (c) => {
     return c.html(errorPage('找不到这张卡', '这个链接可能已经失效，或者二维码没扫全。'), 404)
   }
   const staff = currentStaff(c)
+  if (!staff) return c.html(villagePage(f))
   const s = allSettings()
   const all = listFamilies()
   const idx = all.findIndex((x) => x.id === f.id)
@@ -123,26 +113,18 @@ app.get('/v/:token', (c) => {
 app.get('/v/:token/map', (c) => {
   const f = getFamilyByToken(c.req.param('token'))
   if (!f) return c.html(errorPage('找不到这张卡', '这个链接可能已经失效。'), 404)
-  return c.html(mapPage({ families: listFamilies(), self: f }))
+  return c.html(villagePage(f, 'map'))
 })
 
-app.get('/map', (c) => c.html(mapPage({ families: listFamilies(), self: null })))
+app.get('/map', (c) => c.html(villagePage(null, 'map')))
+app.get('/camp-map', (c) => c.html(villagePage(null, 'campmap')))
+app.get('/guestbook', (c) => c.html(villagePage(null, 'guestbook')))
 
-for (const [path, file, title, kind] of [
-  ['/tips', 'tips.md', '营地 TIPS', 'tips'],
-  ['/charter', 'charter.md', '村庄公约', 'charter'],
-  ['/nearby', 'nearby.md', '周边推荐', 'nearby'],
+for (const [path, view] of [
+  ['/tips', 'tips'], ['/charter', 'rules'], ['/nearby', 'tips'],
 ] as const) {
   app.get(path, (c) => {
-    const s = allSettings()
-    return c.html(
-      guidePage({
-        doc: readDoc(file, title),
-        kind,
-        contactName: s.contactName ?? '小林',
-        back: '/',
-      }),
-    )
+    return c.html(villagePage(null, view))
   })
 }
 
@@ -197,6 +179,14 @@ app.get('/ops/lookup', (c) => {
   const q = (c.req.query('q') ?? '').trim()
   if (!q) return c.redirect('/ops')
 
+  try {
+    const scanned = new URL(q, config.baseUrl)
+    const token = /^\/v\/([A-Z2-7]{32})\/?$/.exec(scanned.pathname)?.[1]
+    if (scanned.origin === new URL(config.baseUrl).origin && token && getFamilyByToken(token)) {
+      return c.redirect('/v/' + token)
+    }
+  } catch { /* Continue with a family code or name. */ }
+
   const padded = /^\d{1,3}$/.test(q) ? q.padStart(3, '0') : q
   let f = getFamilyByCode(padded)
   if (!f) {
@@ -250,6 +240,20 @@ function requireAdmin(c: Context): Staff | null {
   const s = currentStaff(c)
   return s && s.role === 'admin' ? s : null
 }
+
+app.get('/admin/guestbook', (c) => {
+  if (!requireAdmin(c)) return c.redirect('/ops/login')
+  const messages = db.prepare('SELECT id,name,message,created_ms FROM guest_messages WHERE hidden=0 ORDER BY id DESC LIMIT 100').all() as { id: number; name: string; message: string; created_ms: number }[]
+  return c.html(layout({ title: '留言管理', noindex: true, bodyClass: 'is-staff' }, html`
+    <header class="staffbar"><a href="/admin">← 后台</a><span>留言管理</span></header>
+    <main class="staff-list"><h1>村民留言</h1>${messages.length ? messages.map(m => html`<article class="admin-block"><h2>${m.name}</h2><p class="moderation-message">${m.message}</p><small>${new Date(m.created_ms).toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' })}</small><form method="post" action="/admin/guestbook/${m.id}/hide"><button class="btn btn--ghost" type="submit">隐藏这条留言</button></form></article>`) : html`<p>暂无留言。</p>`}</main>`))
+})
+
+app.post('/admin/guestbook/:id/hide', (c) => {
+  if (!requireAdmin(c)) return c.redirect('/ops/login')
+  db.prepare('UPDATE guest_messages SET hidden=1 WHERE id=?').run(c.req.param('id'))
+  return c.redirect('/admin/guestbook')
+})
 
 app.get('/admin', (c) => {
   const staff = requireAdmin(c)

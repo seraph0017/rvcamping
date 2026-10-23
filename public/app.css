@@ -5104,3 +5104,10 @@ body.is-print {
     page-break-after: always;
   }
 }
+
+/* QR photo input remains focusable for keyboard and mobile file capture. */
+.scan-photo { display: flex; min-height: 48px; justify-content: center; cursor: pointer; }
+.scan-photo-input { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+.scan-photo:has(+ .scan-photo-input:focus-visible) { outline: 3px solid #c85c42; outline-offset: 3px; }
+.moderation-message { white-space: pre-wrap; overflow-wrap: anywhere; }
+.lookup__input, .pin-input, .admin-form input, .admin-form textarea { font-size: 16px; }

@@ -2,7 +2,7 @@
   "name": "Retro Village 村民服务站",
   "short_name": "村民服务站",
   "description": "一月一露西郊林场 · 复古露营活动服务站",
-  "start_url": "/staff",
+  "start_url": "/ops",
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait",

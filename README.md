@@ -1,5 +1,35 @@
 # Retro Village 村民服务站
 
+## 2026-10-23 需求方版本适配
+
+公开页面采用需求方 `Retro-Village-2026-测试包.zip` 提供的界面与图文资源，复用原 Hono + SQLite 核销服务。
+
+- 首页 `/` 不含工作人员入口；每户仍通过 `/v/<token>` 查看专属村民卡，旧二维码继续有效。
+- 工作人员登录 `/ops/login`，操作台 `/ops`；微信扫码或“拍照 / 选图识别二维码”定位家庭，再确认签到或发礼品。编号、姓名及完整二维码链接均可查询。
+- 二维码由 `/api/v/<token>/qr.svg` 本地生成，无 CDN 依赖。公开卡每 5 秒及切回前台时读取服务器状态。
+- 营地地图 `/camp-map` 使用真实导览图片，可缩放、拖动、旋转；村庄地图 `/map` 为数据库营位索引，正式实测方位图仍待提供。
+- TIPS 沿用需求方六组图文；活动时间表仍显示待公布。
+- 留言 `/guestbook` 在服务器共享存储，凭有效家庭卡发布（1–300 字、称呼最多 24 字、每户 30 秒一次）；后台 `/admin/guestbook` 可隐藏留言。
+- `?staff=1` 不启用任何工作人员权限。核销、撤销和管理操作继续要求登录与角色权限。
+- 适配 320px 起的小屏、安全区、输入框字号、浏览器返回和页面滚动位置；轻量转场遵循减少动画设置。
+
+新增可维护文件：`server/templates/village.html`（原包页面结构）、`server/pages/village.ts`（服务端注入真实卡片）、`client/village.js`（原生页面/图库/触摸地图与服务端交互）、`public/village.css`、`public/village/*.webp`。
+旧 `home.ts` / `map.ts` / `guide.ts` 留作前版参考，线上公开页面以新模板为准；`family.ts` 继续承担登录后的核销界面。后台编辑内容 Markdown 不会覆盖新版模板内需求方固定图文。
+
+```bash
+npm ci
+npm run check
+npx tsc -p tsconfig.sw.json --noEmit
+npm run build
+npm test  # 自动启动隔离服务器和临时数据库，不接触活动数据
+```
+
+当前公网为 `http://47.86.175.72`，Nginx 80 端口反代本机 3000。会话 Cookie 的 Secure 属性根据 `BASE_URL` 协议设置；核销编号兼容 HTTP。HTTP 环境用微信扫一扫或拍照识别二维码；浏览器实时相机和 PWA 离线包仍需要 HTTPS。
+
+原包 SHA-256：`eb09e62d19aadc842b425bcd3db3fb4670c5bc0367d320b585aefdd781c0d7bd`。
+
+---
+
 一月一露 · 西郊林场「复古露营」活动的村民服务站 H5。
 
 35 个家庭，每家一张专属二维码。**同一张码两个视角**：村民扫开看到自己的营位、TIPS、公约、地图；

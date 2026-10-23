@@ -62,6 +62,16 @@ CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT NOT NULL);
 CREATE TABLE IF NOT EXISTS login_attempts (ip TEXT NOT NULL, ms INTEGER NOT NULL, ok INTEGER NOT NULL);
 CREATE INDEX IF NOT EXISTS idx_login_ip ON login_attempts(ip, ms);
 
+CREATE TABLE IF NOT EXISTS guest_messages (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  family_id INTEGER NOT NULL REFERENCES families(id),
+  name TEXT NOT NULL CHECK (length(name) BETWEEN 1 AND 24),
+  message TEXT NOT NULL CHECK (length(message) BETWEEN 1 AND 300),
+  created_ms INTEGER NOT NULL,
+  hidden INTEGER NOT NULL DEFAULT 0 CHECK (hidden IN (0,1))
+);
+CREATE INDEX IF NOT EXISTS idx_guest_family_time ON guest_messages(family_id, created_ms);
+
 CREATE VIEW IF NOT EXISTS v_family_state AS
 SELECT f.id AS family_id,
        MAX(CASE WHEN o.type='checkin' THEN o.server_ms END)  AS checkin_ms,

@@ -1,6 +1,8 @@
 import { Hono, type Context } from 'hono'
 import { deleteCookie, getCookie, setCookie } from 'hono/cookie'
 import { config, createToken, readToken } from './config.ts'
+import QRCode from 'qrcode'
+import { bodyLimit } from 'hono/body-limit'
 import {
   db,
   getFamilyByToken,
@@ -30,7 +32,7 @@ const COOKIE_OPTS = {
   path: '/',
   httpOnly: true,
   sameSite: 'Lax' as const,
-  secure: config.isProd,
+  secure: new URL(config.baseUrl).protocol === 'https:',
   maxAge: config.sessionDays * 24 * 3600,
 }
 
@@ -68,6 +70,50 @@ api.get('/v/:token', (c) => {
   if (!f) return c.json({ error: 'not_found' }, 404)
   // 公开接口：永久剔除 phone / head_name / 操作人姓名
   return c.json({ family: toPublicCard(f) })
+})
+
+api.get('/v/:token/qr.svg', async (c) => {
+  const f = getFamilyByToken(c.req.param('token'))
+  if (!f) return c.json({ error: 'not_found' }, 404)
+  const svg = await QRCode.toString(`${config.baseUrl}/v/${f.token}`, {
+    type: 'svg', errorCorrectionLevel: 'M', margin: 4, width: 240,
+    color: { dark: '#183653', light: '#ffffff' },
+  })
+  c.header('content-type', 'image/svg+xml')
+  return c.body(svg)
+})
+
+api.get('/guestbook', (c) => {
+  const messages = db.prepare(`SELECT id, name, message, created_ms FROM guest_messages
+    WHERE hidden=0 ORDER BY id DESC LIMIT 100`).all()
+  return c.json({ messages })
+})
+
+api.post('/guestbook', bodyLimit({ maxSize: 8192 }), async (c) => {
+  const body = await c.req.json().catch(() => null)
+  if (!body || typeof body !== 'object') return c.json({ error: 'bad_json' }, 400)
+  const f = typeof body.token === 'string' ? getFamilyByToken(body.token) : null
+  if (!f) return c.json({ error: '请从专属村民卡进入后留言' }, 401)
+  const message = typeof body.message === 'string' ? body.message.trim() : ''
+  const name = typeof body.name === 'string' ? body.name.trim() : ''
+  if (!message || message.length > 300 || name.length > 24) {
+    return c.json({ error: '留言需为 1–300 字，称呼最多 24 字' }, 400)
+  }
+  const now = Date.now()
+  // Synchronous read + insert in this single-process service: one message per family per 30s.
+  const recent = db.prepare('SELECT id FROM guest_messages WHERE family_id=? AND created_ms>? LIMIT 1')
+    .get(f.id, now - 30_000)
+  if (recent) return c.json({ error: '留言已收到，请在 30 秒后再发布' }, 429)
+  const result = db.prepare('INSERT INTO guest_messages(family_id,name,message,created_ms) VALUES(?,?,?,?)')
+    .run(f.id, name || f.display_name.slice(0, 24), message, now)
+  return c.json({ id: Number(result.lastInsertRowid), created_ms: now }, 201)
+})
+
+api.post('/admin/guestbook/:id/hide', (c) => {
+  const staff = currentStaff(c)
+  if (!staff || staff.role !== 'admin') return c.json({ error: 'forbidden' }, 403)
+  const result = db.prepare('UPDATE guest_messages SET hidden=1 WHERE id=?').run(c.req.param('id'))
+  return c.json({ ok: true, changed: Number(result.changes) })
 })
 
 api.get('/map', (c) => {

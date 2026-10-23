@@ -138,6 +138,9 @@ export function staffPage(opts: {
   </div>
 
   <section class="ops-tools">
+    <label class="btn btn--primary scan-photo" for="qr-photo">拍照 / 选图识别村民二维码</label>
+    <input id="qr-photo" type="file" accept="image/*" capture="environment" class="scan-photo-input" />
+    <p class="staff-foot">也可用微信扫一扫打开村民卡；请先在同一个浏览器登录。</p>
     <form class="lookup" method="get" action="/ops/lookup" autocomplete="off">
       <span class="lookup__icon">${icon('search')}</span>
       <input
@@ -145,8 +148,7 @@ export function staffPage(opts: {
         id="lookup"
         name="q"
         type="text"
-        inputmode="numeric"
-        placeholder="编号 / 姓名，如 005 或 大熊家"
+        placeholder="编号 / 姓名 / 二维码链接"
         value="${opts.query}"
         autocomplete="off"
       />

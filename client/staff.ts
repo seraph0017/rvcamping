@@ -7,6 +7,14 @@
  *  - 服务端 seq 定权威，本地只做乐观合并
  */
 
+import jsQR from 'jsqr'
+
+// randomUUID is restricted to secure contexts; getRandomValues also works on HTTP.
+function operationId(): string {
+  if (typeof crypto.randomUUID === 'function') return crypto.randomUUID()
+  return Array.from(crypto.getRandomValues(new Uint8Array(16)), byte => byte.toString(16).padStart(2, '0')).join('')
+}
+
 type Op = {
   opId: string
   groupId: string
@@ -229,7 +237,7 @@ async function postOps(ops: Op[]): Promise<void> {
 function makeOps(token: string, groupId: string, deviceId: string, types: ('checkin' | 'gift')[]): Op[] {
   const now = Date.now()
   return types.map((type) => ({
-    opId: crypto.randomUUID(),
+    opId: operationId(),
     groupId,
     token,
     type,
@@ -341,7 +349,7 @@ async function undoLastAction() {
 async function onAct(action: string, tokenOverride?: string) {
   const body = document.body
   const token = tokenOverride ?? body.dataset.token
-  const groupId = crypto.randomUUID()
+  const groupId = operationId()
   if (!token) return
 
   const types: ('checkin' | 'gift')[] =
@@ -486,7 +494,7 @@ async function preload() {
     // 预缓存 /staff 相关静态资源（SW 已在根 scope 注册）
     if ('serviceWorker' in navigator) {
       const reg = await navigator.serviceWorker.ready
-      const urls = ['/staff', '/assets/app.css', '/assets/staff.js', '/assets/cover.png']
+      const urls = ['/ops', '/assets/app.css', '/assets/staff.js', '/assets/cover.png']
       await Promise.all(urls.map((u) => reg.active?.postMessage({ type: 'PRECACHE', url: u })))
     }
     showToast(`离线就绪 ✓ ${snap.families.length} 家 · ${new Date().toLocaleTimeString('zh-CN')}`, 'ok')
@@ -521,6 +529,32 @@ async function checkSyncStatus() {
 // ---------- 绑定 ----------
 
 function bind() {
+  const qrPhoto = document.getElementById('qr-photo') as HTMLInputElement | null
+  qrPhoto?.addEventListener('change', async () => {
+    const file = qrPhoto.files?.[0]
+    if (!file) return
+    showToast('正在识别二维码…', 'warn')
+    const src = URL.createObjectURL(file)
+    try {
+      const image = new Image()
+      image.src = src
+      await image.decode()
+      const scale = Math.min(1, 1800 / Math.max(image.naturalWidth, image.naturalHeight))
+      const canvas = document.createElement('canvas')
+      canvas.width = Math.round(image.naturalWidth * scale)
+      canvas.height = Math.round(image.naturalHeight * scale)
+      const ctx = canvas.getContext('2d')!
+      ctx.drawImage(image, 0, 0, canvas.width, canvas.height)
+      const pixels = ctx.getImageData(0, 0, canvas.width, canvas.height)
+      const qr = jsQR(pixels.data, pixels.width, pixels.height)
+      if (!qr) throw new Error('没识别到二维码，请靠近拍清楚，或输入卡片编号')
+      const url = new URL(qr.data, location.origin)
+      const match = /^\/v\/([A-Z2-7]{32})\/?$/.exec(url.pathname)
+      if (url.origin !== location.origin || !match) throw new Error('请扫描本活动的村民卡二维码')
+      location.assign('/v/' + match[1])
+    } catch (error) { showToast((error as Error).message || '识别失败，请输入卡片编号', 'err') }
+    finally { URL.revokeObjectURL(src); qrPhoto.value = '' }
+  })
   document.addEventListener('click', (e) => {
     const t = e.target as HTMLElement | null
     if (!t) return

@@ -12,11 +12,13 @@
     "build": "node --experimental-strip-types scripts/build.ts",
     "start": "node --experimental-strip-types server/index.ts",
     "import": "node --experimental-strip-types scripts/import-csv.ts",
-    "check": "tsc --noEmit"
+    "check": "tsc --noEmit",
+    "test": "node --experimental-strip-types --test scripts/integration.test.ts"
   },
   "dependencies": {
     "@hono/node-server": "^1.13.7",
     "hono": "^4.6.14",
+    "jsqr": "^1.4.0",
     "marked": "^15.0.4",
     "qrcode": "^1.5.4"
   },

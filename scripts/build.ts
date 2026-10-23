@@ -23,6 +23,8 @@ await build({
   outfile: 'public/staff.js',
 })
 
+await build({ ...common, entryPoints: ['client/village.js'], outfile: 'public/village.js' })
+
 await build({
   ...common,
   entryPoints: ['client/sw.ts'],
@@ -30,4 +32,4 @@ await build({
   format: 'iife',
 })
 
-console.log('\n✓ 构建完成：public/staff.js, public/sw.js')
+console.log('\n✓ 构建完成：public/staff.js, public/village.js, public/sw.js')

@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <meta name="theme-color" content="#f7f3e8" />
+  <meta name="description" content="Retro Village 2026 村民服务站 · 村民卡、入村签到、村礼领取与村庄信息" />
+  <title>[[TITLE]]</title>
+  <meta name="referrer" content="no-referrer" />
+  <link rel="stylesheet" href="/assets/village.css" />
+</head>
+<body data-initial-view="[[VIEW]]" data-token="[[TOKEN]]">
+<main class="wrap" id="residentApp">
+  <header id="siteHeader">
+    <div class="brandhead"><div class="brandlockup"><img class="stamp" src="/assets/village/rv-stamp.webp" alt="Retro Village 2026 年度徽章" /><div class="brandtitle">村民<span class="retro-accent">服务站</span></div></div>
+    <p class="intro">让我们一起把空地变成复古村庄</p>
+    </div>
+  </header>
+  <section id="view-card">
+    [[PASS]]
+    <div class="section-head"><h2>村庄公告</h2><span>VILLAGE NOTICE</span></div>
+    <div class="grid"><button class="tile" data-view="rules"><span class="icon icon-rules" aria-hidden="true"><svg viewBox="0 0 48 48"><path d="M12 7.5h17l7 7v25H12z"/><path d="M29 7.5v8h7M18 22h12M18 28h9"/><path d="m18 34 2.5 2.5L26 31"/></svg></span><strong>村民公约</strong><small>一起把空地变成村庄</small></button><button class="tile" data-view="campmap"><span class="icon icon-map" aria-hidden="true"><svg viewBox="0 0 48 48"><path d="m7 12 11-4 12 4 11-4v28l-11 4-12-4-11 4zM18 8v28M30 12v28"/><path d="M23 27c0-4 3-7 7-7s7 3 7 7c0 4-7 10-7 10s-7-6-7-10Z"/><circle cx="30" cy="27" r="1.5"/></svg></span><strong>营地地图</strong><small>查看完整营地导览</small></button><button class="tile" data-view="map"><span class="icon icon-village" aria-hidden="true"><svg viewBox="0 0 48 48"><path d="m6 22 18-15 18 15M11 19v22h26V19M20 41V28h8v13"/><path d="M15 23h5v5h-5zM28 23h5v5h-5z"/></svg></span><strong>村庄地图</strong><small>查看分区和营位</small></button><button class="tile" data-view="tips"><span class="icon icon-tips" aria-hidden="true"><svg viewBox="0 0 48 48"><path d="M17 21a7 7 0 1 1 14 0c0 3-1.4 4.8-3.1 6.8-.8 1-1.2 2-1.3 3.2h-5.2c-.1-1.2-.5-2.2-1.3-3.2C18.4 25.8 17 24 17 21Z"/><path d="M21.5 34h5M22.5 38h3M24 6v3M11 12l3 3M37 12l-3 3M7 23h4M37 23h4"/></svg></span><strong>营地 TIPS</strong><small>老村民写给新村民</small></button><button class="tile" data-view="schedule"><span class="icon icon-schedule" aria-hidden="true"><svg viewBox="0 0 48 48"><rect x="8" y="11" width="32" height="29" rx="3"/><path d="M15 7v8M33 7v8M8 19h32"/><circle cx="28" cy="30" r="7"/><path d="M28 26v4l3 2"/></svg></span><strong>活动时间表</strong><small>活动安排稍后更新</small></button><button class="tile" data-view="guestbook"><span class="icon icon-guest" aria-hidden="true"><svg viewBox="0 0 48 48"><path d="M8 11h32v23H23l-9 7v-7H8z"/><path d="M15 19h18M15 25h12"/><path d="m31 35 7-7 3 3-7 7-4 1z"/></svg></span><strong>留言板</strong><small>留下意见和建议</small></button></div>
+  </section>
+  <section id="view-rules" class="hide"><div class="page-nav"><button class="backbtn" data-view="card">‹ 返回</button></div><div class="section-head"><h2>村民公约</h2><span>COMMUNITY RULES</span></div><article class="rule-card"><p class="rule-lead"><span class="rule-lead-label">我们的初心：</span><span class="rule-lead-copy">一次短暂而美好的相聚，<br>一起把空地变成复古村庄。</span></p><ul class="rule-list"><li><span class="rule-check">✓</span><span><strong>互帮互助</strong>：一同搭建维护村庄，力所能及搭把手，乐于分享、彼此包容。</span></li><li><span class="rule-check">✓</span><span><strong>环境友好</strong>：留意焚火安全，践行无痕露营。</span></li><li><span class="rule-check">✓</span><span><strong>自在有礼</strong>：顾及同伴感受，23:00 至次日 8:00，请降低音量。</span></li><li><span class="rule-check">✓</span><span><strong>空气清新</strong>：吸烟请到村外，村内 24 小时禁烟。</span></li></ul><div class="rule-signoff">村里见</div></article></section>
+  <section id="view-tips" class="hide"><div class="page-nav"><button class="backbtn" data-view="card">‹ 返回首页</button><div class="tip-nav"><span id="tipsCount"></span></div></div><div class="section-head"><h2>营地 TIPS</h2><span>老村民的经验分享</span></div><article class="panel tips-card" id="tipsContent"></article><nav class="tips-bottom-nav" aria-label="TIPS 翻页"><button id="prevTipBottom">‹ 上一个</button><button id="nextTipBottom" class="next-tip">NEXT →</button></nav></section>
+  <section id="view-map" class="hide"><div class="page-nav"><button class="backbtn" data-view="card">‹ 返回</button></div><div class="section-head"><h2>村庄地图</h2><span>VILLAGE MAP</span></div>[[VILLAGE_MAP]]</section>
+  <section id="view-schedule" class="hide"><div class="page-nav"><button class="backbtn" data-view="card">‹ 返回</button></div><div class="section-head"><h2>活动时间表</h2><span>PROGRAMME</span></div><article class="panel empty-state"><div style="font-size:28px;margin-bottom:7px">◷</div><strong>活动安排稍后公布</strong><br>时间表确认后会更新在这里。</article></section>
+  <section id="view-guestbook" class="hide"><div class="page-nav"><button class="backbtn" data-view="card">‹ 返回</button></div><div class="section-head"><h2>留言板</h2><span>VILLAGE NOTES</span></div><article class="panel"><h3>把想法留在村里</h3><p>关于村庄的意见、建议或想和大家分享的话，都可以写在这里。</p><p class="guest-note" id="guestNote">[[GUEST_NOTE]]</p><form class="guest-form" id="guestForm"><input id="guestName" maxlength="24" placeholder="怎么称呼你（选填）" /><textarea id="guestMessage" maxlength="300" required placeholder="写下你的留言，最多 300 字"></textarea><button class="guest-submit" type="submit">发布留言</button></form></article><article class="panel"><h3>村民留言</h3><div id="guestList" class="empty-state">还没有留言，欢迎写下第一条。</div></article></section>
+  <section id="view-campmap" class="map-view hide" aria-label="营地地图"><div class="map-toolbar"><button class="backbtn" id="closeCampMap">‹ 返回</button></div><div class="map-stage" id="mapStage"><img id="campMapImage" src="/assets/village/camp-map.webp" alt="西郊林场一月一露营地导览图" loading="lazy" /></div></section>
+  <section id="view-lottery" class="hide"><div class="section-head"><h2>现场抽奖</h2><span>ON-SITE DRAW</span></div><article class="panel"><h3>实体奖券 · 现场公开抽取</h3><p>请以编号手环对应的实体奖券参与抽奖，并投入现场透明抽奖箱。开奖时间和结果由现场公布。</p><p>抽奖不在电子服务站内登记、抽取或核销。</p></article></section>
+  <div class="foot" id="mainFoot">RETRO VILLAGE 2026 · 让我们在村里见</div>
+</main>
+<div id="toast" class="toast hide"></div><div id="modal" class="modalback hide" role="dialog" aria-modal="true"><div class="modal"><button class="close" id="closeModal">×</button><h2 id="modalTitle"></h2><p id="modalBody"></p><div id="modalActions" class="actions"></div></div></div>
+<script type="module" src="/assets/village.js"></script>
+</body>
+</html>

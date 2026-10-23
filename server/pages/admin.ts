@@ -97,6 +97,7 @@ export function adminPage(opts: {
   ${opts.imported ? html`<p class="alertbar alertbar--ok">${icon('check')} ${opts.imported}</p>` : ''}
 
   <section class="admin-quick" aria-label="快捷操作">
+    <a class="admin-tile admin-tile--navy" href="/admin/guestbook"><span class="admin-tile__icon">${icon('book')}</span><strong>留言管理</strong><em>浏览与隐藏村民留言</em></a>
     <a class="admin-tile admin-tile--brick" href="/admin/print">
       <span class="admin-tile__icon">${icon('print')}</span>
       <strong>打印卡片</strong>
