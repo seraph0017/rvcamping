@@ -4,7 +4,7 @@
 
 现场签到与礼品领取已改为**纸质签字表**：到场后在登记点签字，工作人员按纸质表发放礼品。网页只承担公告、地图、营地 TIPS、活动时间表和留言板，不再展示电子村民卡、签到二维码或核销状态。
 
-公网地址：`http://47.86.175.72`（Nginx 80 端口反代本机 3000）。
+公网地址：<https://retrovillage.cn>（香港服务器 `47.86.175.72`，Nginx HTTPS 反代本机 3000）。HTTP、`www` 和旧 IP HTTP 链接统一 308 跳转到正式域名，保留路径与查询参数。
 
 ---
 
@@ -77,7 +77,7 @@ CSV 表头：`code,display_name,head_name,party_size,kids,campsite,phone,note`
 ## 环境变量
 
 ```bash
-BASE_URL=http://47.86.175.72   # 公开访问地址
+BASE_URL=https://retrovillage.cn   # 公开访问地址
 PORT=3000
 NODE_ENV=production
 SESSION_SECRET=<openssl rand -base64 32>
@@ -113,6 +113,24 @@ docs/       交接、方案与设计资料
 ---
 
 ## 部署
+
+2026-10-24 已启用正式域名：
+
+- `retrovillage.cn` 与 `www.retrovillage.cn` 的 A 记录均为 `47.86.175.72`。
+- Nginx：`/etc/nginx/conf.d/rvcamping-ip.conf`，HTTP 声明 IP 与两个域名；443 为根域名和 www 分别配置虚拟主机，www 跳转根域名。
+- 证书覆盖两个域名，路径 `/etc/letsencrypt/live/retrovillage.cn/`，首次证书到期日 2027-01-22。
+- Certbot webroot：`/var/www/rvcamping-acme`；80 端口的 `/.well-known/acme-challenge/` 保留用于续期。
+- `certbot.timer` 自动续期；部署钩子 `/etc/letsencrypt/renewal-hooks/deploy/rvcamping-nginx-reload` 在更新证书后检查并 reload Nginx。
+- `.env` 设置 `BASE_URL=https://retrovillage.cn`，管理会话与访客 Cookie 自动启用 Secure。
+- 域名切换备份：`/srv/rvcamping-domain-backup-20261024-CYKq4F`，含切换前 Nginx 配置和环境文件，仅 root 可读。
+- 原 `api-test.aitracenex.com` 虚拟主机保留，单独维护。
+
+```bash
+curl -fsS https://retrovillage.cn/healthz
+nginx -t
+systemctl status certbot.timer
+certbot renew --cert-name retrovillage.cn --dry-run
+```
 
 ```bash
 cd /srv/rvcamping
