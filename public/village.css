@@ -171,3 +171,9 @@ input, textarea, .guest-form input, .guest-form textarea { font-size: 16px; }
 .paper-note strong{display:block;font-size:13px;letter-spacing:.02em}
 .paper-note p{margin:3px 0 0;color:#7b6a4d;font-size:11px;line-height:1.55}
 @media (max-width:380px){.paper-note{padding:11px;gap:10px}.paper-note__mark{width:36px;height:36px;font-size:10px}.paper-note p{font-size:10px}}
+
+.schedule-list{list-style:none;margin:8px 0 0;padding:0}
+.schedule-entry{display:grid;grid-template-columns:max-content minmax(0,1fr);gap:12px;align-items:start;padding:12px 0}
+.schedule-entry+.schedule-entry{border-top:1px solid #213b5026}
+.schedule-time{font-size:13px;font-weight:700;font-variant-numeric:tabular-nums}
+.schedule-entry p{margin:3px 0 0;color:var(--muted)}

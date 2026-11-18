@@ -30,8 +30,14 @@ test('notice station: paper workflow, retired writes, public guestbook and prese
     const oldToken = family.token
     const originalOps = fixture.prepare('SELECT COUNT(*) AS n FROM ops').get()!.n
     const home = await (await call('/?staff=1')).text()
-    for (const label of ['村庄公告', '村民公约', '营地地图', '村庄地图', '营地 TIPS', '活动时间表', '留言板']) assert.ok(home.includes(label), label)
+    for (const label of ['村庄公告', '村民公约', '营地地图', '营位分布图', '营地 TIPS', '活动时间表', '留言板']) assert.ok(home.includes(label), label)
     for (const label of ['qrbox', 'checkinStatus', 'giftStatus', 'view-staff', 'data-token=', '专属二维码']) assert.ok(!home.includes(label), label)
+    const schedule = await (await call('/schedule')).text()
+    const agenda = schedule.match(/<section id="view-schedule"[^>]*>[\s\S]*?<\/section>/)?.[0] ?? ''
+    assert.match(agenda, /<time datetime="2026-11-28">11月28日（周六）<\/time>/)
+    assert.equal((agenda.match(/class="schedule-entry"/g) ?? []).length, 11)
+    assert.match(agenda, /09:00–10:30[\s\S]*?村民正式签到[\s\S]*?20:30以后/)
+    assert.match(await (await call('/map')).text(), /<h2>营位分布图<\/h2>/)
     const oldPage = await call('/v/' + oldToken)
     assert.equal(oldPage.headers.get('location'), '/')
     assert.equal((await call('/ops')).headers.get('location'), '/')
